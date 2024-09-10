@@ -32,14 +32,6 @@ Config.CoreSettings = {
         --use 'boii' for boii_ui notify
         --use 'ox' for ox_lib notify
     },
-    Menu = {
-        Type = 'qb', -- menu script name, support for qb-menu, jixel-menu and ox_lib context menu
-        --EDIT MENUS.LUA TO ADD YOUR OWN CUSTOM MENU SCRIPT 
-        --use 'qb' for qb-menu
-        --use 'jixel' for jixel-menu
-        --use 'ox' for ox_lib context menu
-        --use 'custom' for your own custom menu
-    },
     Inventory = { -- support for qb-inventory and ox_inventory
         Type = 'qb',
         --use 'qb' for qb-inventory
@@ -61,6 +53,8 @@ Config.CoreSettings = {
         SearchBody = 5000, -- time it takes to search body
         MixLean = 5000, -- time it takes to mix lean
         DrinkLean = 5000, -- time it takes to drink lean
+        RequestMission = 10 * 1000 * 60, -- time to wait before requesting another mission default is 10 minutes
+        LeanEffect = 30 * 1000, --effects timer for drinking lean default is 30 seconds
     },
     Chances = {
         SearchBody = 100, -- chance to successfully search body
@@ -134,4 +128,61 @@ Config.InteractionLocations = {
             targetdistance = 2.0,
         },
     }, 
+}
+
+Config.Animations = {
+    SearchBody = {
+        anim = 'fixing_a_ped',
+        dict = 'mini@repair',
+        flag = 49,
+    },
+    MixLean = {
+        anim = 'fixing_a_ped',
+        dict = 'mini@repair',
+        flag = 49,
+        prop1 = 'prop_plastic_cup_02',
+        bone1 = 57005,
+        pos1 = vec3(0.14, 0.04, -0.04),
+        rot1 = vec3(-60.0, 100.0, 0.0),
+        prop2 = 'prop_choc_pq',
+        bone2 = 18905,
+        pos2 = vec3(0.14, 0.04, 0.0),
+        rot2 = vec3(-60.0, 100.0, 0.0),
+    },
+    DrinkLean = {
+        anim = 'loop_bottle',
+        dict = 'mp_player_intdrink',
+        flag = 49,
+        prop = 'bzzz_prop_drugs_lean_cup',
+        bone = 60309,
+        pos = vec3(0.00, 0.01, 0.08),
+        rot = vec3(0.0, 0.0, 0.0),
+    },
+}
+
+Config.Language = {
+    ProgressBar = {
+        SearchBody = 'Searching Body',
+        MixLean = 'Mixing lean',
+        DrinkLean = 'Drinking lean',
+    },
+    Notifications = {
+        Busy = 'You are already doing something!',
+        Cancelled = 'Action cancelled!',
+        Failed = 'Action failed!',
+        CantCarry = 'You cant carry anymore!',
+        NothingFound = 'you found nothing of use!',
+        VehicleAlreadySpawned = 'A vehicle has already been spawned!',
+        CheckGPS = 'check your GPS for a marked vehicle!',
+        Wait = 'You must wait a while before doing that!',
+        TextMessage = 'You will be sent text message with more information shortly!',
+        WrongPhone = 'You dont have the correct phone to do that!',
+        MissingItems = 'You are missing items. check the requirements!',
+        NoPolice = 'Not enough cops on duty!',
+        EarnedXP = 'You earned some XP!',
+        NoCup = 'Missing plastic cup!',
+        NoDrink = 'Missing fizzy drink!',
+        NoSweets = 'Missing sweets!',
+        NoCodeine = 'Missing codeine promethazine!',
+    },
 }

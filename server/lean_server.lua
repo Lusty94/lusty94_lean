@@ -56,7 +56,7 @@ QBCore.Functions.CreateCallback('lusty94_lean:server:StartMission', function(sou
         cb(true)
     else
         cb(false)
-        SendNotify(src,"There isn't enough police on duty!", 'error', 2500)
+        SendNotify(src, Config.Language.Notifications.NoPolice, 'error', 2500)
     end
 end)
 
@@ -67,35 +67,39 @@ RegisterNetEvent('lusty94_lean:server:SearchBody', function()
     local LeanXP = Player.PlayerData.metadata[MetaDataName]
     local xpAmount = math.random(10,25) -- edit xp amount here
     if not Player then return end
+    local returnAmount
     if Config.XP.Enabled then
-        if LeanXP <= 150 then
-            amount = math.random(1,4)
-        elseif LeanXP <= 500 then
-            amount = math.random(2,5)
-        elseif LeanXP <= 750 then
-            amount = math.random(3,6)
-        elseif LeanXP <= 1250 then
-            amount = math.random(4,7)
-        elseif LeanXP <= 1500 then
-            amount = math.random(5,8)
-        elseif LeanXP <= 2200 then
-            amount = math.random(6,9)
+        if LeanXP >= 150 then
+            returnAmount = math.random(2,5)
+        elseif LeanXP >= 500 then
+            returnAmount = math.random(5,9)
+        elseif LeanXP >= 750 then
+            returnAmount = math.random(9, 13)
+        elseif LeanXP >= 1250 then
+            returnAmount = math.random(13, 18)
+        elseif LeanXP >= 1500 then
+            returnAmount = math.random(18, 25)
+        elseif LeanXP >= 2200 then
+            returnAmount = math.random(25, 32)
         end
-    else amount = math.random(1,4) end -- edit codeinepromethazine amount if not using xp here
-    if InvType == 'qb' then     
-        Player.Functions.AddItem('codeinepromethazine', amount, false)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items['codeinepromethazine'], "add", amount)
+    else
+        returnAmount = math.random(1,3) -- edit return amount here if not using xp
+    end
+    if InvType == 'qb' then
+        if exports['qb-inventory']:AddItem(src, 'codeinepromethazine', returnAmount, nil, nil, nil) then
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items['codeinepromethazine'], 'add', returnAmount)
+        end
     elseif InvType == 'ox' then
-        if exports.ox_inventory:CanCarryItem(src, 'codeinepromethazine', amount) then
-            exports.ox_inventory:AddItem(src, 'codeinepromethazine', amount)
+        if exports.ox_inventory:CanCarryItem(src, 'codeinepromethazine', returnAmount) then
+            exports.ox_inventory:AddItem(src, 'codeinepromethazine', returnAmount)
         else
-            SendNotify(src,"You Can\'t Carry Anymore of This Item!", 'error', 5000)
+            SendNotify(src,Config.Language.Notifications.CantCarry, 'error', 5000)
         end
     end
     if Config.XP.Enabled then
         if math.random(1,100) <= xpChance then
             Player.Functions.SetMetaData(MetaDataName, (LeanXP + xpAmount))
-            SendNotify(src,"You Earned Some XP!", 'success', 2000)
+            SendNotify(src,Config.Language.Notifications.EarnedXP, 'success', 2000)
         end
     end
 end)
@@ -116,19 +120,19 @@ QBCore.Functions.CreateCallback('lusty94_lean:get:LeanIngredients', function(sou
                     cb(true)
                 else
                     cb(false)
-                    SendNotify(src,"You are missing a plastic cup!", 'error', 2500)
+                    SendNotify(src,Config.Language.Notifications.NoCup, 'error', 2500)
                 end
             else
                 cb(false)
-                SendNotify(src,"You are missing a fizzy drink!", 'error', 2500)
+                SendNotify(src,Config.Language.Notifications.NoDrink, 'error', 2500)
             end
         else
             cb(false)
-            SendNotify(src,"You are missing some sweets!", 'error', 2500)
+            SendNotify(src,Config.Language.Notifications.NoSweets, 'error', 2500)
         end
     else
         cb(false)
-        SendNotify(src,"You are missing some coediene promethazine!", 'error', 2500)
+        SendNotify(src,Config.Language.Notifications.NoCodeine, 'error', 2500)
     end
 end)
 
@@ -152,25 +156,27 @@ RegisterNetEvent('lusty94_lean:server:MakeLean', function()
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
     if InvType == 'qb' then     
-        Player.Functions.RemoveItem('codeinepromethazine', 1, false)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items['codeinepromethazine'], "remove", 1)
-        Player.Functions.RemoveItem('sweets', 1, false)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items['sweets'], "remove", 1)
-        Player.Functions.RemoveItem('fizzydrink', 1, false)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items['fizzydrink'], "remove", 1)
-        Player.Functions.RemoveItem('plasticcup', 1, false)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items['plasticcup'], "remove", 1)
-        Player.Functions.AddItem('leancup', 1, false)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items['leancup'], "add", 1)
+        if exports['qb-inventory']:RemoveItem(src, 'codeinepromethazine', 1, nil, nil, nil) then
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items['codeinepromethazine'], 'remove', 1)
+            exports['qb-inventory']:RemoveItem(src, 'sweets', 1, nil, nil, nil)
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items['sweets'], 'remove', 1)
+            exports['qb-inventory']:RemoveItem(src, 'fizzydrink', 1, nil, nil, nil)
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items['fizzydrink'], 'remove', 1)
+            exports['qb-inventory']:RemoveItem(src, 'plasticcup', 1, nil, nil, nil)
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items['plasticcup'], 'remove', 1)
+            exports['qb-inventory']:AddItem(src, 'leancup', 1, nil, nil, nil)
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items['leancup'], 'add', 1)
+        end
     elseif InvType == 'ox' then
-        if exports.ox_inventory:CanCarryItem(src, 'leancup', 1) then
-            exports.ox_inventory:RemoveItem(src, 'codeinepromethazine', 1)
+        if exports.ox_inventory:RemoveItem(src, 'codeinepromethazine', 1) then
             exports.ox_inventory:RemoveItem(src, 'sweets', 1)
             exports.ox_inventory:RemoveItem(src, 'fizzydrink', 1)
             exports.ox_inventory:RemoveItem(src, 'plasticcup', 1)
-            exports.ox_inventory:AddItem(src, 'leancup', 1)
-        else
-            SendNotify(src,"You Can\'t Carry Anymore of This Item!", 'error', 5000)
+            if exports.ox_inventory:CanCarryItem(src, 'leancup', 1) then
+                exports.ox_inventory:AddItem(src, 'leancup', 1)
+            else
+                SendNotify(src,Config.Language.Notifications.CantCarry, 'error', 5000)
+            end
         end
     end
 end)
@@ -182,10 +188,11 @@ RegisterNetEvent('lusty94_lean:server:DrinkLean', function()
     local Player = QBCore.Functions.GetPlayer(src)
     if not Player then return end
     if InvType == 'qb' then     
-        Player.Functions.RemoveItem('leancup', 1, false)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items['leancup'], "remove", 1)
+        if exports['qb-inventory']:RemoveItem(src, 'leancup', 1, nil, nil, nil) then
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items['leancup'], 'remove', 1)
+        end
     elseif InvType == 'ox' then
-        exports.ox_inventory:RemoveItem(src, 'leancup', 1)
+        if exports.ox_inventory:RemoveItem(src, 'leancup', 1) then end
     end
 end)
 

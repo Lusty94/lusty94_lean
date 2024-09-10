@@ -2,11 +2,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local NotifyType = Config.CoreSettings.Notify.Type
 local TargetType = Config.CoreSettings.Target.Type
 local InvType = Config.CoreSettings.Inventory.Type
-local PhoneType = Config.CoreSettings.Phone.Type
-local PoliceType = Config.CoreSettings.Police.Type
-local StressEvent = Config.CoreSettings.EventNames.Stress
-local busy, LeanMissionCooldown = false, false
-
+local busy, hasRequested = false, false
 
 
 --notification function
@@ -31,6 +27,7 @@ end
 
 --police alert
 local function alertPolice()
+    local PoliceType = Config.CoreSettings.Police.Type
 	if PoliceType == 'qb' then
 		TriggerServerEvent('police:server:policeAlert', 'Suspicious Activity Reported')
 	elseif PoliceType == 'ps' then
@@ -45,10 +42,7 @@ end
 -- mission start ped
 CreateThread(function()
     local ped = 'g_m_y_lost_02' -- change ped model here
-    RequestModel(GetHashKey(ped))
-    while not HasModelLoaded(GetHashKey(ped)) do
-        Wait(1000)
-    end
+    lib.requestModel(ped, 5000)
     local coords = Config.InteractionLocations.StartPedLocations[math.random(1, #Config.InteractionLocations.StartPedLocations)]
     leanStartPed = CreatePed(0, ped, coords, true, false)
     FreezeEntityPosition(leanStartPed, true)
@@ -78,24 +72,32 @@ end)
 --search driver
 function SearchDriver()
     if busy then
-        SendNotify("You Are Already Doing Something!", 'error', 2000)
+        SendNotify(Config.Language.Notifications.Busy, 'error', 2000)
+        return
     else
         local success = lib.skillCheck({'easy', 'easy', 'easy',}, {'e'})
         if success then
             busy = true
             LockInventory(true)
-            if lib.progressCircle({ duration = Config.CoreSettings.Timers.SearchBody, label = 'Searching body...', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = true, }, anim = { dict = 'mini@repair', clip = 'fixing_a_ped',},}) then
+            if lib.progressCircle({ 
+                duration = Config.CoreSettings.Timers.SearchBody, 
+                label = Config.Language.ProgressBar.SearchBody, 
+                position = 'bottom', 
+                useWhileDead = false, 
+                canCancel = true, 
+                disable = { car = true, move = true, }, 
+                anim = { dict = Config.Animations.SearchBody.dict, clip = Config.Animations.SearchBody.anim, flag = Config.Animations.SearchBody.flag, },
+            }) then
                 if TargetType == 'qb' then exports['qb-target']:RemoveTargetEntity(driver) elseif TargetType == 'ox' then exports.ox_target:removeLocalEntity(driver, 'driver') end
                 busy = false
                 vehiclespawned = false
                 LockInventory(false)
-                ClearPedTasks(PlayerPedId())
                 local chance = math.random(1,100) 
                 local chance2 = Config.CoreSettings.Chances.SearchBody
                 if chance <= chance2 then
                     TriggerServerEvent('lusty94_lean:server:SearchBody')
                 else
-                    SendNotify('You didnt find anything of use.', 'error', 2000)
+                    SendNotify(Config.Language.Notifications.NothingFound, 'error', 2000)
                 end	
                 local policechance = math.random(1,100)
                 local policechance2 = Config.CoreSettings.Chances.CallPolice
@@ -105,12 +107,11 @@ function SearchDriver()
             else 
                 busy = false
                 LockInventory(false)
-                ClearPedTasks(PlayerPedId())
-                SendNotify('Action cancelled.', 'error', 2000)
+                SendNotify(Config.Language.Notifications.Cancelled, 'error', 2000)
             end
         else
             busy = false
-            SendNotify('Failed!', 'error', 2000)
+            SendNotify(Config.Language.Notifications.Failed, 'error', 2000)
         end
     end
 end
@@ -118,24 +119,32 @@ end
 --search passenger
 function SearchPassenger()
     if busy then
-        SendNotify("You Are Already Doing Something!", 'error', 2000)
+        SendNotify(Config.Language.Notifications.Busy, 'error', 2000)
+        return
     else
         local success = lib.skillCheck({'easy', 'easy', 'easy',}, {'e'})
         if success then
             busy = true
             LockInventory(true)
-            if lib.progressCircle({ duration = Config.CoreSettings.Timers.SearchBody, label = 'Searching body...', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = true, }, anim = { dict = 'mini@repair', clip = 'fixing_a_ped',},}) then
+            if lib.progressCircle({ 
+                duration = Config.CoreSettings.Timers.SearchBody, 
+                label = Config.Language.ProgressBar.SearchBody, 
+                position = 'bottom', 
+                useWhileDead = false, 
+                canCancel = true, 
+                disable = { car = true, move = true, }, 
+                anim = { dict = Config.Animations.SearchBody.dict, clip = Config.Animations.SearchBody.anim, flag = Config.Animations.SearchBody.flag},
+            }) then
                 if TargetType == 'qb' then exports['qb-target']:RemoveTargetEntity(passenger) elseif TargetType == 'ox' then exports.ox_target:removeLocalEntity(passenger, 'passenger') end
                 busy = false
                 vehiclespawned = false
                 LockInventory(false)
-                ClearPedTasks(PlayerPedId())
                 local chance = math.random(1,100) 
                 local chance2 = Config.CoreSettings.Chances.SearchBody
                 if chance <= chance2 then
                     TriggerServerEvent('lusty94_lean:server:SearchBody')
                 else
-                    SendNotify('You didnt find anything of use.', 'error', 2000)
+                    SendNotify(Config.Language.Notifications.NothingFound, 'error', 2000)
                 end	
                 local policechance = math.random(1,100)
                 local policechance2 = Config.CoreSettings.Chances.CallPolice
@@ -145,48 +154,38 @@ function SearchPassenger()
             else 
                 busy = false
                 LockInventory(false)
-                ClearPedTasks(PlayerPedId())
-                SendNotify('Action cancelled.', 'error', 2000)
+                SendNotify(Config.Language.Notifications.Cancelled, 'error', 2000)
             end
         else
             busy = false
-            SendNotify('Failed!', 'error', 2000)
+            SendNotify(Config.Language.Notifications.Failed, 'error', 2000)
         end
     end
 end
 
 
 --spawn delivery vehicle
-function spawnVehicle()
+function spawnLeanVehicle()
     for k, v in pairs(Config.InteractionLocations.Vehicle) do
         if vehiclespawned then
-            SendNotify('A delivery vehicle has already been spawned.', 'error', 2000)
+            SendNotify(Config.Language.Notifications.VehicleAlreadySpawned, 'error', 2000)
         else
-            RequestModel(v.model)
-            while not HasModelLoaded(v.model) do
-                Wait(1000)
-            end						
+            lib.requestModel(v.model, 5000)					
 			local location = Config.InteractionLocations.StartLocations[math.random(1, #Config.InteractionLocations.StartLocations)]
 			local car = CreateVehicle(v.model, location.x, location.y, location.z, location.w, true, true)
             vehiclespawned = true
-			SendNotify('Check your GPS for a marked vehicle.', 'success', 2000)
+			SendNotify(Config.Language.Notifications.CheckGPS, 'success', 2000)
 			local vehicleBlip = AddBlipForEntity(car)
             SetBlipSprite(vehicleBlip, 477)
             SetBlipColour(vehicleBlip, 5)
 			SetBlipScale(vehicleBlip, 0.8)
             BeginTextCommandSetBlipName("STRING")
             AddTextComponentString("Marked Vehicle")
-            RequestModel(v.drivermodel)
-            while not HasModelLoaded(v.drivermodel) do
-                Wait(1000)
-            end			
-            RequestModel(v.passengermodel)
-            while not HasModelLoaded(v.passengermodel) do
-                Wait(1000)
-            end			
+            lib.requestModel(v.drivermodel, 5000)			
+            lib.requestModel(v.passengermodel, 5000)            			
             driver = CreatePed(26, v.drivermodel, location.x, location.y, location.z, location.w, true, false)
             passenger = CreatePed(26, v.passengermodel, location.x, location.y, location.z, location.w, true, false)
-			SetVehicleDoorsLocked(car, 1)
+			SetVehicleDoorsLocked(car, 0)
             SetPedIntoVehicle(driver, car, -1)
             SetPedIntoVehicle(passenger, car, 0)
             SetPedFleeAttributes(driver, 0, 0)
@@ -205,6 +204,8 @@ function spawnVehicle()
             SetPedRelationshipGroupHash(passenger, GetHashKey("HATES_PLAYER"))
             TaskCombatPed(driver, PlayerPedId(), 0, 16)
             TaskCombatPed(passenger, PlayerPedId(), 0, 16)
+            SetPedDropsWeaponsWhenDead(driver, false)
+			SetPedDropsWeaponsWhenDead(passenger, false)
 			local destination = Config.InteractionLocations.DestinationLocations[math.random(#Config.InteractionLocations.DestinationLocations)]
             TaskVehicleDriveToCoordLongrange(driver, car, destination.x, destination.y, destination.z, 35.0, 524340, 10.0)
             if TargetType == 'qb' then
@@ -223,8 +224,6 @@ function spawnVehicle()
 					if DoesEntityExist(driver, passenger) and IsEntityDead(driver, passenger) then
 						RemoveBlip(vehicleBlip)
 						SetPedKeepTask(driver, false)
-						SetPedDropsWeaponsWhenDead(driver, false)
-						SetPedDropsWeaponsWhenDead(passenger, false)
 						SetPedKeepTask(passenger, false)
 						SetModelAsNoLongerNeeded(driver)
 						SetModelAsNoLongerNeeded(passenger)
@@ -239,8 +238,6 @@ function spawnVehicle()
 						SetPedKeepTask(passenger, false)
 						SetModelAsNoLongerNeeded(driver)
 						SetModelAsNoLongerNeeded(passenger)
-						SetPedDropsWeaponsWhenDead(driver, false)
-						SetPedDropsWeaponsWhenDead(passenger, false)
 						DeletePed(driver)
 						DeletePed(passenger)
                         if TargetType == 'qb' then exports['qb-target']:RemoveTargetEntity(driver) elseif TargetType == 'ox' then exports.ox_target:removeLocalEntity(driver, 'driver') end
@@ -265,29 +262,42 @@ function HasVehicleArrived(vehicle, destinationCoords, arrivalDistance)
     return false
 end
 
-local cooldownTimeMission = 1000 * 300 -- 5 minutes in seconds [300000 ms]
-local lastMissionUsage = 0 -- dont touch
+
+
+
+ --search timer function
+function leanTimer()
+    local timer =  Config.CoreSettings.Timers.RequestMission
+    if hasRequested then
+        return
+    end
+    hasRequested = true
+    SetTimeout(timer, function()
+        hasRequested = false
+    end)
+end
+
 --accept supply mission
 RegisterNetEvent('lusty94_lean:client:AcceptMission', function()
-	LeanMissionCooldown = false
-	if LeanMissionCooldown then		
-        local remainingTime = math.ceil((lastMissionUsage + cooldownTimeMission))
-        SendNotify('You must wait ' .. remainingTime / 1000 / 60 .. ' minutes before doing that.', 'error', 2000)
-		LeanMissionCooldown = false
+	if hasRequested then		
+        SendNotify(Config.Language.Notifications.Wait, 'error', 2000)
+		return
 	else
-		spawnVehicle()
-		LeanMissionCooldown = true
-		SetTimeout(cooldownTimeMission, function() LeanMissionCooldown = false end)
+		hasRequested = true
+		spawnLeanVehicle()
+		leanTimer()
 	end
 end)
 
+
 --generate mission email
 RegisterNetEvent('lusty94_lean:client:missionEmail', function()
+    local PhoneType = Config.CoreSettings.Phone.Type
     QBCore.Functions.TriggerCallback('lusty94_lean:server:StartMission', function(canStart)
         if canStart then
-            if LeanMissionCooldown then
-                local remainingTime = math.ceil((lastMissionUsage + cooldownTimeMission))
-                SendNotify('You must wait ' .. remainingTime / 1000 / 60 .. ' minutes before doing that.', 'error', 2000)
+            if hasRequested then		
+				SendNotify(Config.Language.Notifications.Wait, 'error', 2000)
+				return
             else
                 local phoneItems = {
                     "phone", -- qb-phone
@@ -309,13 +319,13 @@ RegisterNetEvent('lusty94_lean:client:missionEmail', function()
                     end
                 end    
                 if hasCompatiblePhone then
-                    SendNotify('You will be sent text message with more information shortly.', 'success', 2000)
-                    --Wait(1000 * 30) -- 30 seconds
+                    SendNotify(Config.Language.Notifications.TextMessage, 'success', 2000)
+                    Wait(15 * 1000) -- 15 seconds
                     if PhoneType == 'qb' then
                         TriggerServerEvent('qb-phone:server:sendNewMail', {
                             sender = 'Unknown Sender ',
                             subject = 'Supplies Mission',
-                            message = 'Hey <br><br> I Overheard some bozo gangsters talking shit about moving a shipment of supplies <br><br> I think they have something you might want.. <br><br> Check your GPS for a location <br><br> CAREFUL THEY MIGHT BE ARMED!!',
+                            message = 'Hey <br><br> I Overheard some useless gangsters talking shit about moving a shipment of supplies <br><br> I think they have something you might want.. <br><br> Check your GPS for a location <br><br> CAREFUL THEY MIGHT BE ARMED!!',
                             button = {
                                 enabled = true,
                                 buttonEvent = 'lusty94_lean:client:AcceptMission'
@@ -325,7 +335,7 @@ RegisterNetEvent('lusty94_lean:client:missionEmail', function()
                         TriggerServerEvent('qs-smartphone:server:sendNewMail', {
                             sender = 'Unknown Sender',
                             subject = 'Supplies Mission',
-                            message = 'Hey <br><br> I Overheard some bozo gangsters talking shit about moving a shipment of supplies <br><br> I think they have something you might want.. <br><br> Check your GPS for a location <br><br> CAREFUL THEY MIGHT BE ARMED!!',
+                            message = 'Hey <br><br> I Overheard some useless gangsters talking shit about moving a shipment of supplies <br><br> I think they have something you might want.. <br><br> Check your GPS for a location <br><br> CAREFUL THEY MIGHT BE ARMED!!',
                             button = {
                                 enabled = true,
                                 buttonEvent = 'lusty94_lean:client:AcceptMission'
@@ -334,17 +344,13 @@ RegisterNetEvent('lusty94_lean:client:missionEmail', function()
                     elseif PhoneType == 'custom' then
                         --INSERT YOUR OWN METHODS OF EMAIL FOR YOUR PHONE RESOURCE HERE
                     end
-                    LeanMissionCooldown = true                
-                    SetTimeout(cooldownTimeMission, function() LeanMissionCooldown = false end) 
                 else
-                    SendNotify('You dont have a compatible phone', 'error', 2000)
+                    SendNotify(Config.Language.Notifications.WrongPhone, 'error', 2000)
                 end
             end
         end
     end)
 end)
-
-
 ------------------------< CRAFTING LEAN >------------------------
 
 --make lean
@@ -352,28 +358,37 @@ RegisterNetEvent('lusty94_lean:client:MakeLean', function()
     QBCore.Functions.TriggerCallback('lusty94_lean:get:LeanIngredients', function(hasItems)
         if hasItems then
             if busy then
-                SendNotify("You Are Already Doing Something!", 'error', 2000)
+                SendNotify(Config.Language.Notifications.Busy, 'error', 2000)
             else
                 local success = lib.skillCheck({'easy', 'easy', 'easy',}, {'e'})
                 if success then
                     busy = true
                     LockInventory(true)
-                    if lib.progressCircle({ duration = Config.CoreSettings.Timers.MixLean, label = 'Mixing lean...', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = true, }, anim = { dict = 'mini@repair', clip = 'fixing_a_ped',}, prop = { {model = 'prop_plastic_cup_02', bone = 57005, pos = vec3(0.14, 0.04, -0.04), rot = vec3(-60.0, 100.0, 0.0),},{model = 'prop_choc_pq', bone = 18905, pos = vec3(0.14, 0.04, 0.0), rot = vec3(-60.0, 100.0, 0.0),}, },}) then
+                    if lib.progressCircle({ 
+                        duration = Config.CoreSettings.Timers.MixLean, 
+                        label = Config.Language.ProgressBar.MixLean, 
+                        position = 'bottom', 
+                        useWhileDead = false, 
+                        canCancel = true, 
+                        disable = { car = true, move = true, }, 
+                        anim = { dict = Config.Animations.MixLean.dict, clip = Config.Animations.MixLean.anim, flag = Config.Animations.MixLean.flag},
+                        prop = { 
+                            {model = Config.Animations.MixLean.prop1, bone = Config.Animations.MixLean.bone1, pos = Config.Animations.MixLean.pos1, rot = Config.Animations.MixLean.rot1,},
+                            {model = Config.Animations.MixLean.prop2, bone = Config.Animations.MixLean.bone2, pos = Config.Animations.MixLean.pos2, rot = Config.Animations.MixLean.rot2,}, 
+                        },
+                    }) then
+                        TriggerServerEvent('lusty94_lean:server:MakeLean')
                         busy = false
                         LockInventory(false)
-                        ClearPedTasks(PlayerPedId())
-                        TriggerServerEvent('lusty94_lean:server:MakeLean')
-                        SendNotify('You made some lean!', 'success', 2000)
                     else 
                         busy = false
                         LockInventory(false)
-                        ClearPedTasks(PlayerPedId())
-                        SendNotify('Action cancelled.', 'error', 2000)
+                        SendNotify(Config.Language.Notifications.Cancelled, 'error', 2000)
                     end
                 else
                     busy = false
                     LockInventory(false)
-                    SendNotify('Failed!', 'error', 2000)
+                    SendNotify(Config.Language.Notifications.Failed, 'error', 2000)
                 end
             end
         end
@@ -384,12 +399,16 @@ end)
 ------------------< DRINKING LEAN >------------------
 
 function leanEffect()
+    local playerPed = PlayerPedId()
+    local StressEvent = Config.CoreSettings.EventNames.Stress
     Wait(2000)
     SetTimecycleModifier('spectator9')
-    SetPedMotionBlur(PlayerPedId(), true)    
+    SetPedMotionBlur(playerPed, true) 
+    TriggerServerEvent(StressEvent, math.random(20,30))
+    AddArmourToPed(playerPed, math.random(20,30))   
     Wait(30 * 1000) -- 30 seconds
     ClearTimecycleModifier()
-    SetPedMotionBlur(PlayerPedId(), false)
+    SetPedMotionBlur(playerPed, false)
 end
 
 --drink lean
@@ -397,34 +416,33 @@ RegisterNetEvent('lusty94_lean:client:DrinkLean', function()
     QBCore.Functions.TriggerCallback('lusty94_lean:get:Lean', function(hasItems)
         if hasItems then
             if busy then
-                SendNotify("You Are Already Doing Something!", 'error', 2000)
+                SendNotify(Config.Language.Notifications.Busy, 'error', 2000)
             else
                 busy = true
                 LockInventory(true)
-                if lib.progressCircle({ duration = Config.CoreSettings.Timers.DrinkLean, label = 'Drinking lean...', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = true, }, anim = { dict = 'mp_player_intdrink', clip = 'loop_bottle',}, prop = { {model = 'bzzz_prop_drugs_lean_cup', bone = 60309, pos = vec3(0.00, 0.01, 0.08), rot = vec3(0.0, 0.0, 0.0),}, },}) then
-                    busy = false
-                    LockInventory(false)
-                    ClearPedTasks(PlayerPedId())
+                if lib.progressCircle({ 
+                    duration = Config.CoreSettings.Timers.DrinkLean, 
+                    label = Config.Language.ProgressBar.DrinkLean, 
+                    position = 'bottom', 
+                    useWhileDead = false, 
+                    canCancel = true, 
+                    disable = { car = true, move = false,}, 
+                    anim = { dict = Config.Animations.DrinkLean.dict, clip = Config.Animations.DrinkLean.anim, flag = Config.Animations.DrinkLean.flag},
+                    prop = { model = Config.Animations.DrinkLean.prop1, bone = Config.Animations.DrinkLean.bone1, pos = Config.Animations.DrinkLean.pos1, rot = Config.Animations.DrinkLean.rot1, },
+                }) then
                     TriggerServerEvent('lusty94_lean:server:DrinkLean')
-                    SendNotify('You drank some lean!', 'success', 2000)
-                    TriggerServerEvent(StressEvent, math.random(20,30))
-                    AddArmourToPed(PlayerPedId(), math.random(20,30))
+                    busy = false
+                    LockInventory(false)                    
                     leanEffect()
                 else 
                     busy = false
                     LockInventory(false)
-                    ClearPedTasks(PlayerPedId())
-                    SendNotify('Action cancelled.', 'error', 2000)
+                    SendNotify(Config.Language.Notifications.Cancelled, 'error', 2000)
                 end
             end
         end
     end)
 end)
-
-
-
-
-
 
 
 ------------------< DONT TOUCH >----------
@@ -458,14 +476,22 @@ function LockInventory(toggle) -- big up to jim for how to do this
     end
 end
 
+--function to display item images for ox_lib menu
+function ItemImage(img)
+	if InvType == 'ox' then
+		return "nui://ox_inventory/web/images/".. img.. '.png'
+	elseif InvType == 'qb' then
+		return "nui://qb-inventory/html/images/".. QBCore.Shared.Items[img].image
+	end
+end
+
 --dont touch
 AddEventHandler('onResourceStop', function(resource)
 	if resource == GetCurrentResourceName() then
         busy = false
-        cooldownTimeMission = 0
-        LeanMissionCooldown = false 
+        LockInventory(false) 
         if TargetType == 'qb' then exports['qb-target']:RemoveTargetEntity(leanStartPed, 'leanStartPed') elseif TargetType == 'ox' then exports.ox_target:removeLocalEntity(leanStartPed, 'leanStartPed') end  
         DeletePed(leanStartPed)
-        print('^5--<^3!^5>-- ^7| Lusty94 |^5 ^5--<^3!^5>--^7 Lean V1.0.0 Stopped Successfully ^5--<^3!^5>--^7')
+        print('^5--<^3!^5>-- ^7| Lusty94 |^5 ^5--<^3!^5>--^7 Lean V1.0.1 Stopped Successfully ^5--<^3!^5>--^7')
     end
 end)

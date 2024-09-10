@@ -8,7 +8,7 @@ author 'Lusty94'
 
 description 'Lean Making Script For QB-Core'
 
-version '1.0.0'
+version '1.0.1'
 
 
 client_scripts {

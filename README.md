@@ -33,7 +33,6 @@ SCRIPT SUPPORT VIA DISCORD: https://discord.gg/BJGFrThmA8
 
 - [qb-core](https://github.com/qbcore-framework/qb-core)
 - [qb-target](https://github.com/qbcore-framework/qb-target)
-- [qb-menu](https://github.com/qbcore-framework/qb-menu)
 - [qb-inventory](https://github.com/qbcore-framework/qb-inventory)
 - [qb-phone](https://github.com/qbcore-framework/qb-phone)
 - [ox_lib](https://github.com/overextended/ox_lib/releases/)
@@ -72,7 +71,7 @@ leanxp = 0,
 
 
 
-## ITEMS
+## QB-CORE ITEMS
 
 ```
 
@@ -87,3 +86,66 @@ leanxp = 0,
 
 ```
 
+
+## OX_INVENTORY ITEMS
+
+```
+
+
+	["plasticcup"] = {
+		label = "Plastic Cup",
+		weight = 100,
+		stack = true,
+		close = true,
+		description = "",
+		client = {
+			image = "plasticcup.png",
+		}
+	},
+
+	["sweets"] = {
+		label = "Pack of Sweets",
+		weight = 500,
+		stack = true,
+		close = true,
+		description = "",
+		client = {
+			image = "sweets.png",
+		}
+	},
+
+	["leancup"] = {
+		label = "Cup of Lean",
+		weight = 100,
+		stack = true,
+		close = true,
+		description = "",
+		client = {
+			image = "leancup.png",
+		}
+	},
+
+	["codeinepromethazine"] = {
+		label = "Codeine Promethazine",
+		weight = 500,
+		stack = true,
+		close = true,
+		description = "",
+		client = {
+			image = "codeinepromethazine.png",
+		}
+	},
+
+	["fizzydrink"] = {
+		label = "Bottle of Fizzy Drink",
+		weight = 500,
+		stack = true,
+		close = true,
+		description = "",
+		client = {
+			image = "fizzydrink.png",
+		}
+	},
+
+
+```
